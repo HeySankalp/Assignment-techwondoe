@@ -9,32 +9,38 @@ import Badge from './Badge'
 import ButtonPrimary from './ButtonPrimary'
 import ButtonSecondary from './ButtonSecondary'
 import Pagination from './Pagination'
-import { ChangeEvent, useEffect, useState } from 'react'
+import { ChangeEvent, useContext, useEffect, useState } from 'react'
 import DialogModal from './DialogModal'
 import { fetchUser } from '../api/getUsers'
 import Loader from './Loader'
 import { responseType, userListType } from '../types/companySetting'
 import ModalContent from './modalContent'
+import { UserContext } from '../context/userContext'
+import { useUserFun } from '../hooks/Useuserdata'
 
 
 
 const UserSection = () => {
+
     const [isOpen, setIsOpen] = useState(false)
     const [isEdit, setIsEdit] = useState(false);
+    const [targatedId, setTargatedId] = useState<number | undefined>(0);
+
+    const { deleteUser, setUser, users: userList } = useUserFun()
     const [totalPage, setTotalPages] = useState(0);
-    const [userList, setUserList] = useState<userListType[] | any>();
+    // const [userList, setUserList] = useState<userListType[] | any>();
     const [page, setPage] = useState(1)
     const { userSection } = Content
 
     // api call using useQuery
-    const { isLoading, isError, error, data: userData } = useQuery<any>(['userData', page], () => { return fetchUser(page) })
+    const { isLoading, isError, error, data: userData } = useQuery<any>(['userData', page], () => fetchUser(page))
 
     useEffect(() => {
         if (userData) {
-            setUserList(userData?.data.data)
+            setUser(userData?.data.data);
             setTotalPages(userData?.data.total_pages)
         }
-    }, [userData])
+    }, [isLoading, page])
 
     // configration to change dailogue box content 
     const AddEditHandler = (event: string) => {
@@ -63,27 +69,15 @@ const UserSection = () => {
         }
     }
 
-    // delting user from the local state
+
     const deleteUserHandler = (id: number | undefined) => {
-        const action = window.confirm("Do you really want to delete user ? \n notice: api call is  refetching the content" );
-        if (action) {
-            setUserList((list: userListType[]) => {
-                return list.filter((user) => user.id !== id)
-            })
-        }
+        deleteUser(id)
     }
 
 
     const TopView = () => {
         return (
             <>
-                <DialogModal isOpen={isOpen} setIsOpen={setIsOpen}  >
-                    <ModalContent
-                        setUserList={setUserList}
-                        isEdit={isEdit}
-                        setIsOpen={setIsOpen}
-                        setIsEdit={setIsEdit} />
-                </DialogModal>
                 <div className='flex items-center p-4 justify-between border-b-2'>
                     <div>
                         <div className='flex items-center'>
@@ -104,6 +98,13 @@ const UserSection = () => {
     const UserList = () => {
         return (
             <div className='py-1'>
+                <DialogModal isOpen={isOpen} setIsOpen={setIsOpen}  >
+                    <ModalContent
+                        targatedId={targatedId}
+                        isEdit={isEdit}
+                        setIsOpen={setIsOpen}
+                        setIsEdit={setIsEdit} />
+                </DialogModal>
                 <table className='w-full [&>*:nth-child(even)]:bg-gray-100 '>
                     <tr className='text-left text-slate-500 text-sm '>
                         <th className='w-[50%] py-2'><span className='flex items-center gap-1 pl-3'>Name<AiOutlineArrowDown /></span></th>
@@ -114,7 +115,7 @@ const UserSection = () => {
                     </tr>
                     {userList?.map((user: userListType, index: any) => <tr key={index} className='border-b-2'>
                         <td className='w-[50%] pl-3 py-2 flex items-center'>
-                            <div className='w-[30px] h-[30px] mr-2 rounded-full overflow-hidden'><img className='w-full h-full bg-cover' src={user.avatar?user.avatar:'https://img.freepik.com/free-icon/user_318-159711.jpg?w=2000'} alt="img" /></div>
+                            <div className='w-[30px] h-[30px] mr-2 rounded-full overflow-hidden'><img className='w-full h-full bg-cover' src={user.avatar ? user.avatar : 'https://img.freepik.com/free-icon/user_318-159711.jpg?w=2000'} alt="img" /></div>
                             <div className='text-[11px]'>
                                 <div>{user?.first_name}</div>
                                 <div className='text-slate-500'>{user?.first_name}@techwondoe.com</div>
@@ -131,11 +132,11 @@ const UserSection = () => {
                         </td>
                         <td className='py-2'>
                             <div className='flex gap-2 items-center justify-center text-slate-600 text-sm'>
-                                <div className='p-2 hover:bg-slate-200 rounded-full'>
-                                    <RiDeleteBin6Line className='cursor-pointer' onClick={() => { deleteUserHandler(user?.id) }} />
+                                <div className='p-2 hover:bg-slate-200 rounded-full' onClick={() => { deleteUserHandler(user.id) }} >
+                                    <RiDeleteBin6Line className='cursor-pointer' />
                                 </div>
-                                <div className='p-2 hover:bg-slate-200 rounded-full'>
-                                    <FiEdit2 className='cursor-pointer' onClick={() => { AddEditHandler('edit') }} />
+                                <div className='p-2 hover:bg-slate-200 rounded-full' onClick={() => { AddEditHandler('edit'); setTargatedId(user.id) }} >
+                                    <FiEdit2 className='cursor-pointer' />
                                 </div>
                             </div>
                         </td>

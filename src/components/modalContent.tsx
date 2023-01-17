@@ -1,5 +1,7 @@
 import React, { useState } from 'react'
+import { useUserFun } from '../hooks/Useuserdata';
 import { userListType } from '../types/companySetting';
+import { create_UUID } from '../utils';
 import ButtonPrimary from './ButtonPrimary';
 import ButtonSecondary from './ButtonSecondary';
 
@@ -7,14 +9,14 @@ type propType = {
     isEdit: boolean;
     setIsOpen: (arg: boolean) => void;
     setIsEdit: (arg: boolean) => void;
-    setUserList: any
+    targatedId: number | undefined;
 }
 
 const ModalContent = (props: propType) => {
-
+    const { addUser, updateUser } = useUserFun()
     const [name, setName] = useState('')
     const [role, setRole] = useState('')
-    const { isEdit, setIsEdit, setIsOpen, setUserList } = props;
+    const { isEdit, setIsEdit, setIsOpen } = props;
 
     const onInputHandler = (e: React.ChangeEvent<HTMLInputElement>, identifier: string) => {
         if (identifier === 'name') {
@@ -25,21 +27,21 @@ const ModalContent = (props: propType) => {
     }
 
     const onAddEditClick = () => {
-        // if (isEdit) {
-        //     console.log("mai edit krunga");
-
-        // } else {
-        //     const newUser = {
-        //         "first_name": name,
-        //         "role": role,
-        //         "id":Math.random()
-        //     }
-        //     setUserList((list: userListType[]) => {
-        //         return list.push(newUser);
-        //     })
-        //     setName('');
-        //     setRole('');
-        // }
+        if (isEdit) {
+            setIsOpen(false);
+            setName('');
+            setRole(''); 
+        } else {
+            const newUser = {
+                "first_name": name,
+                "role": role,
+                "id": new Date().getTime()
+            }
+            addUser(newUser)
+            setIsOpen(false);
+            setName('');
+            setRole('');
+        }
     }
 
     return (
